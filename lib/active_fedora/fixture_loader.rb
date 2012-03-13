@@ -17,6 +17,9 @@ module ActiveFedora
       rescue ActiveFedora::ObjectNotFoundError
         logger.debug "The object #{pid} has already been deleted (or was never created)."
         0
+      rescue Errno::ECONNREFUSED => e
+        logger.debug "Can't connect to Fedora! Are you sure jetty is running?"
+       0
       end
     end
 
