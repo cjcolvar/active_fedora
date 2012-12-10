@@ -1,5 +1,3 @@
-require 'solrizer/field_name_mapper'
-
 module ActiveFedora::MetadataDatastreamHelper 
   
   attr_accessor :fields, :xml_loaded
@@ -15,7 +13,6 @@ module ActiveFedora::MetadataDatastreamHelper
   
   def self.included(klass)
     klass.extend(ClassMethods)
-    klass.send(:include, Solrizer::FieldNameMapper)
   end
 
   def ensure_xml_loaded

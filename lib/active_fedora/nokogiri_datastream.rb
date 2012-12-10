@@ -5,6 +5,7 @@ require "solrizer/xml"
 #this class represents a xml metadata datastream
 module ActiveFedora
   class NokogiriDatastream < Datastream
+    extend Deprecation
       
     before_save do
       return unless xml_loaded
@@ -260,7 +261,7 @@ module ActiveFedora
                #just use index supplied instead of trying possibilities
                index = term_pointer[i-1].values.first
                solr_name_base = OM::XML::Terminology.term_hierarchical_name({bases[j]=>index},current_last)
-               solr_name = generate_solr_symbol(solr_name_base, term.type)
+               solr_name = SolrService.solr_name(solr_name_base, term.type)
                bases.delete_at(j)
                #insert the new solr name base if found
                bases.insert(j,solr_name_base) if has_solr_name?(solr_name,solr_doc)
@@ -270,14 +271,14 @@ module ActiveFedora
                current_base = bases[j]
                bases.delete_at(j)
                solr_name_base = OM::XML::Terminology.term_hierarchical_name({current_base=>index},current_last)
-               solr_name = generate_solr_symbol(solr_name_base, term.type)
+               solr_name = SolrService.solr_name(solr_name_base, term.type)
                #check for indexes that exist until we find all nodes
                while has_solr_name?(solr_name,solr_doc) do
                  #only reinsert if it exists
                  bases.insert(j,solr_name_base)
                  index = index + 1
                  solr_name_base = OM::XML::Terminology.term_hierarchical_name({current_base=>index},current_last)
-                 solr_name = generate_solr_symbol(solr_name_base, term.type)
+                 solr_name = SolrService.solr_name(solr_name_base, term.type)
                end
              end
            end
@@ -285,7 +286,7 @@ module ActiveFedora
 
          #all existing applicable solr_names have been found and we can now grab all values and build up our value array
          bases.each do |base|
-           field_name = generate_solr_symbol(base.to_sym, term.type)
+           field_name = SolrService.solr_name(base.to_sym, term.type)
            value = (solr_doc[field_name].nil? ? solr_doc[field_name.to_s]: solr_doc[field_name])
            unless value.nil?
              value.is_a?(Array) ? values.concat(value) : values << value
@@ -294,7 +295,7 @@ module ActiveFedora
       else
          #this is not hierarchical and we can simply look for the solr name created using the terms without any indexes
          generic_field_name_base = OM::XML::Terminology.term_generic_name(*term_pointer)
-         generic_field_name = generate_solr_symbol(generic_field_name_base, term.type)
+         generic_field_name = SolrService.solr_name(generic_field_name_base, term.type)
          value = (solr_doc[generic_field_name].nil? ? solr_doc[generic_field_name.to_s]: solr_doc[generic_field_name])
          unless value.nil?
            value.is_a?(Array) ? values.concat(value) : values << value
@@ -304,8 +305,9 @@ module ActiveFedora
     end
 
     def generate_solr_symbol(base, data_type)
-      Solrizer::XML::TerminologyBasedSolrizer.default_field_mapper.solr_name(base.to_sym, data_type)
+      SolrService.solr_name(base.to_sym, data_type)
     end
+    deprecation_deprecate :generate_solr_symbol
 
     # ** Experimental **
     #@return [Boolean] true if either the key for name exists in solr or if its string value exists

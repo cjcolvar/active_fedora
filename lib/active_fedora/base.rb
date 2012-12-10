@@ -333,7 +333,7 @@ module ActiveFedora
         predicate = RelsExtDatastream.short_predicate(statement.predicate)
         literal = statement.object.kind_of?(RDF::Literal)
         val = literal ? statement.object.value : statement.object.to_str
-        ::Solrizer::Extractor.insert_solr_field_value(solr_doc, solr_name(predicate, :symbol), val )
+        ::Solrizer::Extractor.insert_solr_field_value(solr_doc, SolrService.solr_name(predicate, :symbol), val )
       end
       return solr_doc
     end
@@ -438,7 +438,6 @@ module ActiveFedora
     include Attributes
     include ActiveFedora::Persistence
     include Model
-    include Solrizer::FieldNameMapper
     include Loggable
     include ActiveModel::Conversion
     include Validations
