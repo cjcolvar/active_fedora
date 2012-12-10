@@ -333,7 +333,8 @@ module ActiveFedora
         predicate = RelsExtDatastream.short_predicate(statement.predicate)
         literal = statement.object.kind_of?(RDF::Literal)
         val = literal ? statement.object.value : statement.object.to_str
-        ::Solrizer::Extractor.insert_solr_field_value(solr_doc, SolrService.solr_name(predicate, :symbol), val )
+        field_symbol = SolrService.solr_name(predicate, :symbol)
+        (solr_doc[field_symbol] ||= []) << (val.nil? ? "" : val)
       end
       return solr_doc
     end
