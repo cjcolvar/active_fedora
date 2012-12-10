@@ -1,11 +1,12 @@
-require "solrizer"
 require 'rsolr'
+require 'active_fedora/field_mapper'
+require 'active_fedora/field_name_mapper'
 
 module ActiveFedora
   class SolrService 
-    
-    include Solrizer::FieldNameMapper
+
     include Loggable
+    include ActiveFedora::FieldNameMapper
     
     attr_reader :conn
 

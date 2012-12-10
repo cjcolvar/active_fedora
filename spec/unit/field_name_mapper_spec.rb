@@ -1,0 +1,28 @@
+require 'spec_helper'
+
+describe ActiveFedora::FieldNameMapper do
+  
+  before(:all) do
+    class TestFieldNameMapper
+      include ActiveFedora::FieldNameMapper
+    end
+  end
+  
+  describe "#mappings" do
+    it "should return at least an id_field value" do
+      TestFieldNameMapper.id_field.should == "id"
+    end
+  end
+  
+  describe '#solr_name' do
+    it "should generate solr field names" do
+      TestFieldNameMapper.solr_name(:active_fedora_model, :symbol).should == "active_fedora_model_s"
+    end
+  end
+  
+  describe ".solr_name" do
+    it "should generate solr field names" do
+      TestFieldNameMapper.new.solr_name(:active_fedora_model, :symbol).should == "active_fedora_model_s"
+    end
+  end
+end
