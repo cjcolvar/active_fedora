@@ -98,8 +98,8 @@ module ActiveFedora
         things = send(field_key)
         if things 
           field_symbol = ActiveFedora::SolrService.solr_name(field_key, field_info[:type])
-          things.val.each do |val|    
-            ::Solrizer::Extractor.insert_solr_field_value(solr_doc, field_symbol, val )         
+          things.val.each do |val|
+	    (solr_doc[field_symbol] ||= []) << (val.nil? ? "" : val)
           end
         end
       end

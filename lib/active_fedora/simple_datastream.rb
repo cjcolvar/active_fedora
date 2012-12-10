@@ -78,8 +78,9 @@ module ActiveFedora
         things = send(field_key)
         if things 
           field_symbol = ActiveFedora::SolrService.solr_name(field_key, field_info[:type])
-          things.val.each do |val|    
-            ::Solrizer::Extractor.insert_solr_field_value(solr_doc, field_symbol, val.to_s )         
+          things.val.each do |val|
+            #val.to_s here to get a date string (e.g. "2012-01-15") for creation_date_dt
+            (solr_doc[field_symbol] ||= []) << (val.nil? ? "" : val.to_s)
           end
         end
       end

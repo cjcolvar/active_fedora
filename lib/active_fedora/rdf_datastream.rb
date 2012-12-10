@@ -210,8 +210,8 @@ module ActiveFedora
           field_info[:behaviors].each do |index_type|
             field_symbol = ActiveFedora::SolrService.solr_name(field_key, field_info[:type], index_type)
             values = [values] unless values.respond_to? :each
-            values.each do |val|    
-              ::Solrizer::Extractor.insert_solr_field_value(solr_doc, field_symbol, val)         
+            values.each do |val|
+              (solr_doc[field_symbol] ||= []) << (val.nil? ? "" : val)
             end
           end
         end
