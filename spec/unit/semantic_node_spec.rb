@@ -1,7 +1,5 @@
 require 'spec_helper'
 
-require 'xmlsimple'
-
 @@last_pid = 0
 
 class SpecNode2
