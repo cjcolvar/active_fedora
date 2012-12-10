@@ -1,3 +1,5 @@
+require "active-fedora"
+
 module Hydra
   # This is an example of a NokogiriDatastream that defines a terminology for Hydra rightsMetadata xml
   # The documentation for Hydra rightsMetadata is on the Hydra wiki at https://wiki.duraspace.org/display/hydra/Hydra+rights+metadata
@@ -184,7 +186,7 @@ module Hydra
 
     def to_solr(solr_doc=Hash.new)
       super(solr_doc)
-      ::Solrizer::Extractor.insert_solr_field_value(solr_doc, "embargo_release_date_dt", embargo_release_date(:format=>:solr_date)) if embargo_release_date
+      solr_doc.merge!("embargo_release_date_dt" => embargo_release_date(:format=>:solr_date)) if embargo_release_date
       solr_doc
     end
 

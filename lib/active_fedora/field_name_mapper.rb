@@ -22,6 +22,10 @@ module ActiveFedora::FieldNameMapper
     def solr_name(field_name, field_type, index_type = :searchable)
       self.default_field_mapper.solr_name(field_name, field_type, index_type)
     end
+
+    def solr_names_and_values(field_name, field_value, field_type, index_type = :searchable)
+      self.default_field_mapper.solr_names_and_values(field_name, field_value, field_type, index_type)
+    end
     
     def default_field_mapper
       @@default_field_mapper ||= ActiveFedora::FieldMapper::Default.new
@@ -43,6 +47,10 @@ module ActiveFedora::FieldNameMapper
   
   def solr_name(field_name, field_type, index_type = :searchable)   
     self.class.solr_name(field_name, field_type, index_type)
+  end
+
+  def solr_names_and_values(field_name, field_value, field_type, index_type = :searchable)   
+    self.class.solr_names_and_values(field_name, field_value, field_type, index_type)
   end
   
 end

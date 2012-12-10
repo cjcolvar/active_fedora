@@ -1,6 +1,5 @@
 require "nokogiri"
 require  "om"
-require "solrizer/xml"
 
 #this class represents a xml metadata datastream
 module ActiveFedora
@@ -13,7 +12,6 @@ module ActiveFedora
     end  
 
     include OM::XML::Document
-    include Solrizer::XML::TerminologyBasedSolrizer # this adds support for calling .to_solr
     
     alias_method(:om_term_values, :term_values) unless method_defined?(:om_term_values)
     alias_method(:om_update_values, :update_values) unless method_defined?(:om_update_values)
@@ -416,6 +414,65 @@ module ActiveFedora
         om_term_values(*term_pointer)
       end
     end
+
+    def to_solr(solr_doc = Hash.new)
+      unless self.class.terminology.nil?
+        self.class.terminology.terms.each_pair do |term_name,term|
+	  term_doc = self.solrize_term(term) || {}
+          solr_doc.merge!(term_doc) {|k,v1,v2| (v1 ||= []) << (v2.nil? ? "" : v2.first)}
+        end
+      end
+      solr_doc
+    end
+
+    def solrize_term(term, opts = {})
+      solr_doc = Hash.new
+      parents = opts.fetch(:parents, [])
+      term_pointer = parents+[term.name]
+      nodeset = self.term_values(*term_pointer)
+    
+      nodeset.each do |n|
+      
+        # TODO: ActiveFedora::FieldMapper::Default is supposed to translate dates into full ISO 8601 formatted strings.
+        # However, there an integration issue with ActiveFedora using OM: it ignores the default field mapper given
+        # in this gem that does this. So, the following is a workaround until it is fixed.
+        node = n.is_a?(Date) ? DateTime.parse(n.to_s).to_time.utc.iso8601 : n.to_s
+
+	node_doc = self.solrize_node(node.to_s, term_pointer, term) || {}      
+        solr_doc.merge!(node_doc) {|k,v1,v2| (v1 ||= []) << (v2.nil? ? "" : v2.first)}
+        unless term.kind_of? OM::XML::NamedTermProxy
+          term.children.each_pair do |child_term_name, child_term|
+	    child_term_doc = self.solrize_term(child_term, opts={:parents=>parents+[{term.name=>nodeset.index(node.to_s)}]}) || {}
+            solr_doc.merge!(child_term_doc) {|k,v1,v2| (v1 ||= []) << (v2.nil? ? "" : v2.first)}
+          end
+        end
+      end
+      solr_doc
+    end
+
+    def solrize_node(node_value, term_pointer, term)
+      solr_doc = Hash.new
+      return solr_doc unless term.index_as && !term.index_as.empty?
+
+      generic_field_name_base = OM::XML::Terminology.term_generic_name(*term_pointer)
+
+      SolrService.solr_names_and_values(generic_field_name_base, node_value, term.type, term.index_as).each do |field_name, field_value|
+        unless field_value.join("").strip.empty?
+          (solr_doc[field_name] ||= []) << (field_value.nil? ? "" : field_value.first)
+        end
+      end
+
+      if term_pointer.length > 1
+        hierarchical_field_name_base = OM::XML::Terminology.term_hierarchical_name(*term_pointer)
+        SolrService.solr_names_and_values(hierarchical_field_name_base, node_value, term.type, term.index_as).each do |field_name, field_value|
+          unless field_value.join("").strip.empty?
+          (solr_doc[field_name] ||= []) << (field_value.nil? ? "" : field_value.first)
+          end
+        end
+      end
+      solr_doc
+    end
+
   end
 end
 

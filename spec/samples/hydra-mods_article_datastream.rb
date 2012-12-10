@@ -27,11 +27,12 @@ module Hydra
       t.title_info(:path=>"titleInfo") {
         t.main_title(:index_as=>[:facetable],:path=>"title", :label=>"title")
         t.language(:index_as=>[:facetable],:path=>{:attribute=>"lang"})
+	t.titletype(:index_as=>[:searchable],:path=>{:attribute=>"type"})
       } 
       t.language{
         t.lang_code(:index_as=>[:facetable], :path=>"languageTerm", :attributes=>{:type=>"code"})
       }
-      t.abstract   
+      t.abstract(:index_as=>[:searchable])   
       t.subject {
         t.topic(:index_as=>[:facetable])
       }      
@@ -48,7 +49,7 @@ module Hydra
         t.role(:ref=>[:role])
         t.description(:index_as=>[:facetable])
         t.date(:path=>"namePart", :attributes=>{:type=>"date"})
-        t.last_name(:path=>"namePart", :attributes=>{:type=>"family"})
+        t.last_name(:path=>"namePart", :attributes=>{:type=>"family"}, :index_as=>[:searchable])
         t.first_name(:path=>"namePart", :attributes=>{:type=>"given"}, :label=>"first name")
         t.terms_of_address(:path=>"namePart", :attributes=>{:type=>"termsOfAddress"})
         t.computing_id
@@ -66,7 +67,7 @@ module Hydra
         t.title_info(:index_as=>[:facetable],:ref=>[:title_info])
         t.origin_info(:path=>"originInfo") {
           t.publisher
-          t.date_issued(:path=>"dateIssued")
+          t.date_issued(:path=>"dateIssued", :type=>:date, :index_as=>[:searchable])
           t.issuance(:index_as=>[:facetable])
         }
         t.issn(:path=>"identifier", :attributes=>{:type=>"issn"})
@@ -91,6 +92,8 @@ module Hydra
       t.peer_reviewed(:proxy=>[:journal,:origin_info,:issuance], :index_as=>[:facetable])
       t.title(:proxy=>[:title_info, :main_title])
       t.journal_title(:proxy=>[:journal, :title_info, :main_title])
+      t.pub_date(:proxy=>[:journal, :issue, :publication_date])
+      t.issue_date(:ref=>[:journal, :origin_info, :date_issued], :type=> :date)
     end
     
     # Generates an empty Mods Article (used when you call ModsArticle.new without passing in existing xml)
@@ -508,8 +511,8 @@ module Hydra
     def to_solr(solr_doc=Hash.new)
       super(solr_doc)
             
-      ::Solrizer::Extractor.insert_solr_field_value(solr_doc, "object_type_facet", "Article")
-      ::Solrizer::Extractor.insert_solr_field_value(solr_doc, "mods_journal_title_info_facet", "Unknown") if solr_doc["mods_journal_title_info_facet"].nil? 
+      solr_doc.merge!("object_type_facet" => "Article")
+      solr_doc.merge!("mods_journal_title_info_facet" => "Unknown") if solr_doc["mods_journal_title_info_facet"].nil? 
 
       solr_doc
     end
