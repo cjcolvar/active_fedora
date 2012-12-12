@@ -1,5 +1,6 @@
 require "loggable"
-module ActiveFedora
+
+module ActiveFedora::FieldMapper
   
   # Maps Term names and values to Solr fields, based on the Term's data type and any index_as options.
   #
@@ -122,106 +123,23 @@ module ActiveFedora
   #     index_as :sortable, :suffix => '_xsort'
   #   end
   
-  class FieldMapper
-    
-    include Loggable
-    
     # ------ Class methods ------
+    module ClassMethods    
+
+    attr_accessor :id_field_name, :default_index_types, :mappings
     
-    @@instance_init_actions = Hash.new { |h,k| h[k] = [] }
-    
-    def self.id_field(field_name)
-      add_instance_init_action do
-        @id_field = field_name
-      end
+    def id_field(field_name)
+      @id_field_name = field_name
     end
-    
-    def self.index_as(index_type, opts = {}, &block)
-      add_instance_init_action do
+
+    def index_as(index_type, opts = {}, &block)
+	@mappings ||= {}
         mapping = (@mappings[index_type] ||= IndexTypeMapping.new)
         mapping.opts.merge! opts
         yield DataTypeMappingBuilder.new(mapping) if block_given?
-      end
+        (@default_index_types ||= []) << index_type if opts[:default]
     end
     
-    # Loads solr mappings from yml file.
-    # Assumes that string values are solr field name suffixes.  
-    # This is meant as a simple entry point for working with solr mappings.  For more powerful control over solr mappings, create your own subclasses of FieldMapper instead of using a yml file.
-    # @param [String] config_path This is the path to the directory where your mappings file is stored. Defaults to "Rails.root/config/solr_mappings.yml"
-    def self.load_mappings( config_path=nil )
-
-      if config_path.nil? 
-        if defined?(Rails.root) && !Rails.root.nil?
-          config_path = File.join(Rails.root, "config", "solr_mappings.yml")
-        end
-        # Default to using the config file within the gem 
-        if !File.exist?(config_path.to_s)
-          config_path = File.join(File.dirname(__FILE__), "..", "..", "config", "solr_mappings.yml")          
-        end
-      end
-
-      logger.debug("Loading field name mappings from #{File.expand_path(config_path)}")
-      mappings_from_file = YAML::load(File.open(config_path))
-      
-      self.clear_mappings
-      
-      # Set id_field from file if it is available
-      id_field_from_file = mappings_from_file.delete("id")
-      if id_field_from_file.nil?
-        id_field "id"
-      else
-        id_field id_field_from_file
-      end
-      
-      default_index_type = mappings_from_file.delete("default")
-      mappings_from_file.each_pair do |index_type, type_settings| 
-        if type_settings.kind_of?(Hash)
-          index_as index_type.to_sym, :default => index_type == default_index_type do |t|
-            type_settings.each_pair do |field_type, suffix|
-              eval("t.#{field_type} :suffix=>\"#{suffix}\"")
-            end
-          end
-        else
-          index_as index_type.to_sym, :default => index_type == default_index_type, :suffix=>type_settings 
-        end
-      end      
-    end
-  
-  private
-  
-    def self.add_instance_init_action(&block)
-      @@instance_init_actions[self] << lambda do |mapper|
-        mapper.instance_eval &block
-      end
-    end
-  
-    def self.apply_instance_init_actions(instance)
-      if self.superclass.respond_to? :apply_instance_init_actions
-        self.superclass.apply_instance_init_actions(instance)
-      end
-      @@instance_init_actions[self].each do |action|
-        action.call(instance)
-      end
-    end
-    
-    # Reset all of the mappings
-    def self.clear_mappings
-      logger.debug "resetting mappings for #{self.to_s}"
-      @@instance_init_actions[self] = []
-    end
-  
-  public
-    
-    # ------ Instance methods ------
-    
-    attr_reader :id_field, :default_index_types, :mappings
-    
-    def initialize
-      @mappings = {}
-      self.class.apply_instance_init_actions(self)
-      @default_index_types = @mappings.select { |ix_type, mapping| mapping.opts[:default] }.map(&:first)
-    end
-
     # Given a specific field name, data type, and index type, returns the corresponding solr name.
     
     def solr_name(field_name, field_type, index_type = :searchable)
@@ -275,7 +193,7 @@ module ActiveFedora
     end
     
   private
-  
+
     def solr_name_and_mappings(field_name, field_type, index_type)
       field_name = field_name.to_s
       mapping = @mappings[index_type]
@@ -293,6 +211,13 @@ module ActiveFedora
       [name, mapping, data_type_mapping]
     end
 
+   end  
+  
+  def self.included(klass)
+    klass.extend(ClassMethods)
+    klass.send(:include, Loggable)
+  end
+    
     class IndexTypeMapping
       attr_accessor :opts, :data_types
       
@@ -326,7 +251,9 @@ module ActiveFedora
   
   public
 
-    class Default < FieldMapper
+    class Default
+      include ActiveFedora::FieldMapper
+
       id_field 'id'
       index_as :searchable, :default => true do |t|
         t.default :suffix => '_t'
@@ -351,7 +278,5 @@ module ActiveFedora
       index_as :sortable,             :suffix => '_sort'
       index_as :unstemmed_searchable, :suffix => '_unstem_search'
     end
-    
-  end
     
 end
