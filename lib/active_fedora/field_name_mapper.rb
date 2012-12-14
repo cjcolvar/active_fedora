@@ -36,14 +36,13 @@ module ActiveFedora::FieldNameMapper
     # @param [String] config_path This is the path to the directory where your mappings file is stored. Defaults to "Rails.root/config/solr_mappings.yml"
     def load_mappings_from_file( config_path=nil )
 
-      if config_path.nil?
-        if defined?(Rails.root) && !Rails.root.nil?
+      if config_path.nil? and defined?(Rails.root) and !Rails.root.nil?
           config_path = File.join(Rails.root, "config", "solr_mappings.yml")
-        end
-        # Default to using the config file within the gem
-        if !File.exist?(config_path.to_s)
-          config_path = File.join(File.dirname(__FILE__), "..", "..", "config", "solr_mappings.yml")
-        end
+      end
+
+      unless config_path and File.exists? config_path
+	logger.warn("No field name mappings config file found.  Using default mappings.")
+	return ActiveFedora::FieldMapper::Default
       end
 
       logger.debug("Loading field name mappings from #{File.expand_path(config_path)}")

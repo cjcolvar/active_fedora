@@ -252,7 +252,9 @@ module ActiveFedora::FieldMapper
       index_as :searchable, :default => true do |t|
         t.default :suffix => '_t'
         t.date :suffix => '_dt' do |value|
-          if value.is_a?(Date) 
+          if value.nil?
+	    nil
+	  elsif value.is_a?(Date) 
             DateTime.parse(value.to_s).to_time.utc.iso8601 
           elsif !value.empty?
             DateTime.parse(value).to_time.utc.iso8601

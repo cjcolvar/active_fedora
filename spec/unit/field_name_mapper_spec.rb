@@ -35,17 +35,9 @@ describe ActiveFedora::FieldNameMapper do
       TestFieldNameMapper.field_mapper.mappings[:facetable].should == mappings_from_file["facetable"]
       TestFieldNameMapper.field_mapper.mappings[:sortable].should == mappings_from_file["sortable"]
     end
-    it 'should default to using the mappings from config/solr_mappings.yml' do
+    it 'should default to using ActiveFedora::FieldMapper::Default' do
       TestFieldNameMapper.load_mappings
-      default_file_path = File.join(File.dirname(__FILE__), "..", "..","config","solr_mappings.yml")
-      mappings_from_file = YAML::load(File.open(default_file_path))
-      TestFieldNameMapper.id_field.should == mappings_from_file["id"]
-      mappings_from_file["searchable"].each_pair do |k,v|
-        TestFieldNameMapper.field_mapper.mappings[[:searchable,k.to_sym]][:suffix].should == v        
-      end
-      TestFieldNameMapper.field_mapper.mappings[:displayable].should == mappings_from_file["displayable"]
-      TestFieldNameMapper.field_mapper.mappings[:facetable].should == mappings_from_file["facetable"]
-      TestFieldNameMapper.field_mapper.mappings[:sortable].should == mappings_from_file["sortable"]
+      TestFieldNameMapper.field_mapper.should == ActiveFedora::FieldMapper::Default
     end
     it "should wipe out pre-existing mappings without affecting other FieldMappers" do
       TestFieldNameMapper.load_mappings

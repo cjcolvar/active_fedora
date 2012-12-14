@@ -431,14 +431,8 @@ module ActiveFedora
       term_pointer = parents+[term.name]
       nodeset = self.term_values(*term_pointer)
     
-      nodeset.each do |n|
-      
-        # TODO: ActiveFedora::FieldMapper::Default is supposed to translate dates into full ISO 8601 formatted strings.
-        # However, there an integration issue with ActiveFedora using OM: it ignores the default field mapper given
-        # in this gem that does this. So, the following is a workaround until it is fixed.
-        node = n.is_a?(Date) ? DateTime.parse(n.to_s).to_time.utc.iso8601 : n.to_s
-
-	node_doc = self.solrize_node(node.to_s, term_pointer, term) || {}      
+      nodeset.each do |node|
+	node_doc = self.solrize_node(node, term_pointer, term) || {}      
         solr_doc.merge!(node_doc) {|k,v1,v2| (v1 ||= []) << (v2.nil? ? "" : v2.first)}
         unless term.kind_of? OM::XML::NamedTermProxy
           term.children.each_pair do |child_term_name, child_term|
