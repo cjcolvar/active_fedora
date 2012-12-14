@@ -96,7 +96,7 @@ end
 # You should never load this rake file into any other application
 desc 'Set up ActiveFedora environment.  !! Only for use while working within a working copy of active-fedora'
 task :environment do
-  puts "Initializing ActiveFedora Rake environment.  This should only be called when working within a workign copy of the active-fedora code."
+  puts "Initializing ActiveFedora Rake environment.  This should only be called when working within a working copy of the active-fedora code."
   require "#{APP_ROOT}/spec/samples/models/hydrangea_article"
 end
 
