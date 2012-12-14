@@ -2,37 +2,33 @@
 module ActiveFedora::FieldNameMapper
     
   # Class Methods -- These methods will be available on classes that include this Module 
-  
+ 
   module ClassMethods
-    def mappings
-      return self.default_field_mapper.mappings
-    end
+    attr_accessor :field_mapper
 
     def id_field
-      return self.default_field_mapper.id_field_name
+      return self.field_mapper.id_field_name
     end
 
     # Re-loads solr mappings for the default field mapper's class 
     # and re-sets the default field mapper to an FieldMapper instance with those mappings.
     def load_mappings( config_path=nil)
-      self.default_field_mapper = load_mappings_from_file(config_path)
+      self.field_mapper = load_mappings_from_file(config_path)
     end
     
     def solr_name(field_name, field_type, index_type = :searchable)
-      self.default_field_mapper.solr_name(field_name, field_type, index_type)
+      self.field_mapper.solr_name(field_name, field_type, index_type)
     end
 
     def solr_names_and_values(field_name, field_value, field_type, index_type = :searchable)
-      self.default_field_mapper.solr_names_and_values(field_name, field_value, field_type, index_type)
+      self.field_mapper.solr_names_and_values(field_name, field_value, field_type, index_type)
     end
     
-    def default_field_mapper
-      @@default_field_mapper ||= ActiveFedora::FieldMapper::Default
+    def field_mapper
+      @field_mapper ||= ActiveFedora::FieldMapper::Default
     end
 
-    def default_field_mapper=(field_mapper)
-      @@default_field_mapper = field_mapper
-    end
+    private
 
     # Loads solr mappings from yml file.
     # Assumes that string values are solr field name suffixes.

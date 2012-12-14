@@ -26,14 +26,14 @@ describe ActiveFedora::FieldNameMapper do
       TestFieldNameMapper.load_mappings(file_path)
       mappings_from_file = YAML::load(File.open(file_path))
       TestFieldNameMapper.id_field.should == "pid"
-      TestFieldNameMapper.mappings[:edible].opts[:default].should == true
-      TestFieldNameMapper.mappings[:edible].data_types[:boolean].opts[:suffix].should == "_edible_bool"
+      TestFieldNameMapper.field_mapper.default_index_types.include?(:edible).should == true
+      TestFieldNameMapper.field_mapper.mappings[[:edible,:boolean]][:suffix].should == "_edible_bool"
       mappings_from_file["edible"].each_pair do |k,v|
-        TestFieldNameMapper.mappings[:edible].data_types[k.to_sym].opts[:suffix].should == v        
+        TestFieldNameMapper.field_mapper.mappings[[:edible, k.to_sym]][:suffix].should == v        
       end
-      TestFieldNameMapper.mappings[:displayable].opts[:suffix].should == mappings_from_file["displayable"]
-      TestFieldNameMapper.mappings[:facetable].opts[:suffix].should == mappings_from_file["facetable"]
-      TestFieldNameMapper.mappings[:sortable].opts[:suffix].should == mappings_from_file["sortable"]
+      TestFieldNameMapper.field_mapper.mappings[:displayable].should == mappings_from_file["displayable"]
+      TestFieldNameMapper.field_mapper.mappings[:facetable].should == mappings_from_file["facetable"]
+      TestFieldNameMapper.field_mapper.mappings[:sortable].should == mappings_from_file["sortable"]
     end
     it 'should default to using the mappings from config/solr_mappings.yml' do
       TestFieldNameMapper.load_mappings
@@ -41,18 +41,18 @@ describe ActiveFedora::FieldNameMapper do
       mappings_from_file = YAML::load(File.open(default_file_path))
       TestFieldNameMapper.id_field.should == mappings_from_file["id"]
       mappings_from_file["searchable"].each_pair do |k,v|
-        TestFieldNameMapper.mappings[:searchable].data_types[k.to_sym].opts[:suffix].should == v        
+        TestFieldNameMapper.field_mapper.mappings[[:searchable,k.to_sym]][:suffix].should == v        
       end
-      TestFieldNameMapper.mappings[:displayable].opts[:suffix].should == mappings_from_file["displayable"]
-      TestFieldNameMapper.mappings[:facetable].opts[:suffix].should == mappings_from_file["facetable"]
-      TestFieldNameMapper.mappings[:sortable].opts[:suffix].should == mappings_from_file["sortable"]
+      TestFieldNameMapper.field_mapper.mappings[:displayable].should == mappings_from_file["displayable"]
+      TestFieldNameMapper.field_mapper.mappings[:facetable].should == mappings_from_file["facetable"]
+      TestFieldNameMapper.field_mapper.mappings[:sortable].should == mappings_from_file["sortable"]
     end
     it "should wipe out pre-existing mappings without affecting other FieldMappers" do
       TestFieldNameMapper.load_mappings
       file_path = File.join(File.dirname(__FILE__), "..", "fixtures","test_solr_mappings.yml")
       TestFieldNameMapper.load_mappings(file_path)
-      TestFieldNameMapper.mappings[:searchable].should be_nil
-      ActiveFedora::FieldMapper::Default.mappings[:searchable].should_not be_nil
+      TestFieldNameMapper.field_mapper.mappings[:searchable].should be_nil
+      ActiveFedora::FieldMapper::Default.mappings[[:searchable, :default]].should_not be_nil
     end
     it "should raise an informative error if the yaml file is structured improperly"
     it "should raise an informative error if there is no YAML file"

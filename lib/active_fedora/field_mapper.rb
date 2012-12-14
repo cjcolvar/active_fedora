@@ -126,18 +126,23 @@ module ActiveFedora::FieldMapper
     # ------ Class methods ------
     module ClassMethods    
 
-    attr_accessor :id_field_name, :default_index_types, :mappings
+    attr_accessor :id_field_name, :default_index_types, :mappings #hash[index_type] => suffix ; hash[[index_type, data_type]] => {:suffix => "_t", :converter => &block}
     
     def id_field(field_name)
       @id_field_name = field_name
     end
 
     def index_as(index_type, opts = {}, &block)
-	@mappings ||= {}
-        mapping = (@mappings[index_type] ||= IndexTypeMapping.new)
-        mapping.opts.merge! opts
-        yield DataTypeMappingBuilder.new(mapping) if block_given?
-        (@default_index_types ||= []) << index_type if opts[:default]
+	@mappings ||= (self.superclass.included_modules.include?(ActiveFedora::FieldMapper) ? self.superclass.mappings.clone : {})
+	@mappings[index_type] = opts[:suffix] if opts[:suffix]
+	if block_given?
+	  builder = DataTypeMappingBuilder.new(index_type)
+          yield builder
+	  @mappings.merge! builder.mappings
+	end
+
+	@default_index_types ||= (self.superclass.included_modules.include?(ActiveFedora::FieldMapper) ? self.superclass.default_index_types.clone : [])
+        @default_index_types << index_type if opts[:default]
     end
     
     # Given a specific field name, data type, and index type, returns the corresponding solr name.
@@ -173,8 +178,8 @@ module ActiveFedora::FieldMapper
         next unless name
         
         # Is there a custom converter?
-        value = if data_type_mapping && data_type_mapping.converter
-          converter = data_type_mapping.converter
+        value = if data_type_mapping && data_type_mapping[:converter]
+          converter = data_type_mapping[:converter]
           if converter.arity == 1
             converter.call(field_value)
           else
@@ -197,15 +202,16 @@ module ActiveFedora::FieldMapper
     def solr_name_and_mappings(field_name, field_type, index_type)
       field_name = field_name.to_s
       mapping = @mappings[index_type]
-      unless mapping
+      data_type_mapping = @mappings[[index_type, field_type]] || @mappings[[index_type, :default]]
+      
+      suffix = data_type_mapping[:suffix] if data_type_mapping
+      suffix ||= mapping
+
+      unless suffix
         logger.debug "Unknown index type '#{index_type}' for field #{field_name}"
         return nil
       end
-      
-      data_type_mapping = mapping.data_types[field_type] || mapping.data_types[:default]
-      
-      suffix = data_type_mapping.opts[:suffix] if data_type_mapping
-      suffix ||= mapping.opts[:suffix]
+
       name = field_name + suffix
       
       [name, mapping, data_type_mapping]
@@ -218,32 +224,20 @@ module ActiveFedora::FieldMapper
     klass.send(:include, Loggable)
   end
     
-    class IndexTypeMapping
-      attr_accessor :opts, :data_types
-      
-      def initialize
-        @opts = {}
-        @data_types = {}
-      end
-    end
-    
-    class DataTypeMapping
-      attr_accessor :opts, :converter
-      
-      def initialize
-        @opts = {}
-      end
-    end
-    
     class DataTypeMappingBuilder
-      def initialize(index_type_mapping)
-        @index_type_mapping = index_type_mapping
+      attr_reader :mappings, :index_type
+
+      def initialize(index_type)
+        @index_type = index_type
       end
       
       def method_missing(method, *args, &block)
-        data_type_mapping = (@index_type_mapping.data_types[method] ||= DataTypeMapping.new)
-        data_type_mapping.opts.merge! args[0] if args.length > 0
-        data_type_mapping.converter = block if block_given?
+	@mappings ||= {}
+	suffix = (args.first and args.first.is_a? Hash) ? args.first[:suffix] : nil
+	converter = block_given? ? block : nil
+	@mappings[[@index_type, method]] ||= {}
+	@mappings[[@index_type, method]][:suffix] = suffix 
+	@mappings[[@index_type, method]][:converter] = converter if converter
       end
     end
     
