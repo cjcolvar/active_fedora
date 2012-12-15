@@ -1,6 +1,6 @@
 require "loggable"
 
-module ActiveFedora::FieldMapper
+module ActiveFedora
   
   # Maps Term names and values to Solr fields, based on the Term's data type and any index_as options.
   #
@@ -124,30 +124,42 @@ module ActiveFedora::FieldMapper
   #   end
   
     # ------ Class methods ------
-    module ClassMethods    
+  class FieldMapper
+
+    include Loggable
 
     attr_accessor :id_field_name, :default_index_types, :mappings #hash[index_type] => suffix ; hash[[index_type, data_type]] => {:suffix => "_t", :converter => &block}
     
-    def id_field(field_name)
+    def self.id_field(field_name)
       @id_field_name = field_name
     end
 
-    def index_as(index_type, opts = {}, &block)
-	@mappings ||= (self.superclass.included_modules.include?(ActiveFedora::FieldMapper) ? self.superclass.mappings.clone : {})
-	@mappings[index_type] = opts[:suffix] if opts[:suffix]
+    def self.id_field_name
+      @id_field_name ||= (self.superclass.ancestors.include?(ActiveFedora::FieldMapper) ? self.superclass.id_field_name : nil)
+    end
+
+    def self.mappings
+	@mappings ||= (self.superclass.ancestors.include?(ActiveFedora::FieldMapper) ? self.superclass.mappings.clone : {})
+    end
+
+    def self.default_index_types
+	@default_index_types ||= (self.superclass.ancestors.include?(ActiveFedora::FieldMapper) ? self.superclass.default_index_types.clone : [])
+    end
+
+    def self.index_as(index_type, opts = {}, &block)
+	mappings[index_type] = opts[:suffix] if opts[:suffix]
 	if block_given?
 	  builder = DataTypeMappingBuilder.new(index_type)
           yield builder
-	  @mappings.merge! builder.mappings
+	  mappings.merge! builder.mappings
 	end
 
-	@default_index_types ||= (self.superclass.included_modules.include?(ActiveFedora::FieldMapper) ? self.superclass.default_index_types.clone : [])
-        @default_index_types << index_type if opts[:default]
+        default_index_types << index_type if opts[:default]
     end
     
     # Given a specific field name, data type, and index type, returns the corresponding solr name.
     
-    def solr_name(field_name, field_type, index_type = :searchable)
+    def self.solr_name(field_name, field_type, index_type = :searchable)
       name, mapping, data_type_mapping = solr_name_and_mappings(field_name, field_type, index_type)
       name
     end
@@ -155,7 +167,7 @@ module ActiveFedora::FieldMapper
     # Given a field name-value pair, a data type, and an array of index types, returns a hash of
     # mapped names and values. The values in the hash are _arrays_, and may contain multiple values.
     
-    def solr_names_and_values(field_name, field_value, field_type, index_types)
+    def self.solr_names_and_values(field_name, field_value, field_type, index_types)
       # Determine the set of index types, adding defaults and removing not_xyz
       
       index_types ||= []
@@ -199,10 +211,10 @@ module ActiveFedora::FieldMapper
     
   private
 
-    def solr_name_and_mappings(field_name, field_type, index_type)
+    def self.solr_name_and_mappings(field_name, field_type, index_type)
       field_name = field_name.to_s
-      mapping = @mappings[index_type]
-      data_type_mapping = @mappings[[index_type, field_type]] || @mappings[[index_type, :default]]
+      mapping = mappings[index_type]
+      data_type_mapping = mappings[[index_type, field_type]] || mappings[[index_type, :default]]
       
       suffix = data_type_mapping[:suffix] if data_type_mapping
       suffix ||= mapping
@@ -217,13 +229,6 @@ module ActiveFedora::FieldMapper
       [name, mapping, data_type_mapping]
     end
 
-   end  
-  
-  def self.included(klass)
-    klass.extend(ClassMethods)
-    klass.send(:include, Loggable)
-  end
-    
     class DataTypeMappingBuilder
       attr_reader :mappings, :index_type
 
@@ -245,8 +250,7 @@ module ActiveFedora::FieldMapper
   
   public
 
-    class Default
-      include ActiveFedora::FieldMapper
+    class Default < ActiveFedora::FieldMapper
 
       id_field 'id'
       index_as :searchable, :default => true do |t|
@@ -274,5 +278,5 @@ module ActiveFedora::FieldMapper
       index_as :sortable,             :suffix => '_sort'
       index_as :unstemmed_searchable, :suffix => '_unstem_search'
     end
-    
+  end 
 end

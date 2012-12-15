@@ -48,9 +48,7 @@ module ActiveFedora::FieldNameMapper
       logger.debug("Loading field name mappings from #{File.expand_path(config_path)}")
       mappings_from_file = YAML::load(File.open(config_path))
 
-      klass = Class.new do
-        include ActiveFedora::FieldMapper
-      end
+      klass = Class.new(ActiveFedora::FieldMapper)
 
       # Set id_field from file if it is available
       id_field_from_file = mappings_from_file.delete("id")

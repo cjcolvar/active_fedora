@@ -4,8 +4,7 @@ describe ActiveFedora::FieldMapper do
   
   # --- Test Mappings ----
   
-  class TestMapper0
-    include ActiveFedora::FieldMapper 
+  class TestMapper0 < ActiveFedora::FieldMapper 
     id_field 'ident'
     index_as :searchable, :suffix => '_s',    :default => true
     index_as :edible,     :suffix => '_food'
