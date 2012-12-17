@@ -71,6 +71,23 @@ namespace :repo do
     puts "Loaded '#{pid}' into #{ActiveFedora::Base.connection_for_pid(pid).client.url}" if pid
   end
 
+  desc "Index the object identified by pid. Example: rake repo:index pid=demo:12"
+  task :index => :environment do
+    if ENV["pid"].nil?
+      puts "You must specify a valid pid.  Example: rake repo:index pid=demo:12"
+    else
+      pid = ENV["pid"]
+      result = ActiveFedora::FixtureLoader.index(pid)
+      puts "Indexed '#{pid}' from #{ActiveFedora::Base.connection_for_pid(pid).client.url}" if result == 1
+    end
+  end
+
+  desc "Reindex all of the objects in the repository"
+  task :reindex => :environment do
+    puts "Re-indexing all objects"
+    ActiveFedora::Base.all(:cast=>true) {|obj| obj.update_index }
+    puts "Re-indexed all objects"
+  end
 
 end
 
