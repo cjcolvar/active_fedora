@@ -54,10 +54,6 @@ describe ActiveFedora::FieldMapper do
       TestMapper0.solr_name('bar', :string, :laughable).should == 'bar_haha'
     end
 
-    it "should default the index_type to :searchable" do
-      TestMapper0.solr_name('foo', :string).should == 'foo_s'
-    end
-    
     it "should map based on data type" do
       TestMapper0.solr_name('foo', :integer, :fungible).should == 'foo_f1'
       TestMapper0.solr_name('foo', :garble,  :fungible).should == 'foo_f2'  # based on type.default
@@ -69,8 +65,8 @@ describe ActiveFedora::FieldMapper do
     end
     
     it "should allow subclasses to selectively override suffixes" do
-      TestMapper1.solr_name('foo', :date).should == 'foo_d'   # override
-      TestMapper1.solr_name('foo', :string).should == 'foo_s' # from super
+      TestMapper1.solr_name('foo', :date, :searchable).should == 'foo_d'   # override
+      TestMapper1.solr_name('foo', :string, :searchable).should == 'foo_s' # from super
       TestMapper1.solr_name('foo', :integer, :fungible).should == 'foo_f5'  # override on data type
       TestMapper1.solr_name('foo', :garble,  :fungible).should == 'foo_f4'  # override on data type
       TestMapper1.solr_name('foo', :fratz,   :fungible).should == 'foo_f2'  # from super
@@ -78,7 +74,7 @@ describe ActiveFedora::FieldMapper do
     end
     
     it "should support field names as symbols" do
-      TestMapper0.solr_name(:active_fedora_model, :symbol).should == "active_fedora_model_s"
+      TestMapper0.solr_name(:active_fedora_model, :symbol, :searchable).should == "active_fedora_model_s"
     end
     
     it "should support scenarios where field_type is nil" do
