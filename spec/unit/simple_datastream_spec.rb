@@ -55,7 +55,7 @@ describe ActiveFedora::SimpleDatastream do
     it "should have title" do
       solr = @test_ds.to_solr
       solr["publisher_t"].should == ["publisher1"]
-      solr["creation_date_dt"].should == ["2012-01-15"]
+      solr["creation_date_dt"].should == ["2012-01-15T00:00:00Z"]
     end
   end
 

@@ -76,11 +76,11 @@ module ActiveFedora
       @fields.each do |field_key, field_info|
         next if field_key == :location ## FIXME HYDRA-825
         things = send(field_key)
-        if things 
-          field_symbol = ActiveFedora::SolrService.solr_name(field_key, field_info[:type])
-          things.val.each do |val|
-            #val.to_s here to get a date string (e.g. "2012-01-15") for creation_date_dt
-            (solr_doc[field_symbol] ||= []) << (val.nil? ? "" : val.to_s)
+        next if things.nil?
+        things.val.each do |val|
+          next if val.nil?
+          SolrService.solr_names_and_values(field_key, val, field_info[:type]).each do |field_name, field_value|
+            (solr_doc[field_name] ||= []) << field_value.join(" ")
           end
         end
       end

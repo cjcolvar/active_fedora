@@ -113,8 +113,7 @@ module ActiveFedora
     # 
     # This is utilized by ActiveFedora::Base.load_instance_from_solr to load 
     # the relationships hash using the Solr document passed in instead of from the RELS-EXT datastream
-    # in Fedora.  Utilizes solr_name method (provided by ActiveFedora::FieldNameMapper) to map solr key to
-    # relationship predicate. 
+    # in Fedora.  Utilizes solr_name method to map solr key to relationship predicate. 
     #
     # ====Warning
     #  Solr must be synchronized with RELS-EXT data in Fedora.

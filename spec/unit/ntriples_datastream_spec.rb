@@ -146,7 +146,7 @@ describe ActiveFedora::NtriplesRDFDatastream do
         register_vocabularies RDF::DC, RDF::FOAF, RDF::RDFS
         map_predicates do |map|
           map.created(:in => RDF::DC) do |index| 
-            index.as :sortable, :displayable
+            index.as :sortable, :displayable, :not_searchable
             index.type :date
           end
           map.title(:in => RDF::DC) do |index|
@@ -172,7 +172,7 @@ describe ActiveFedora::NtriplesRDFDatastream do
       @subject.stubs(:new? => false)
       @sample_fields = {:my_datastream__publisher => {:values => ["publisher1"], :type => :string, :behaviors => [:facetable, :sortable, :searchable, :displayable]}, 
         :my_datastream__based_near => {:values => ["coverage1", "coverage2"], :type => :text, :behaviors => [:displayable, :facetable, :searchable]}, 
-        :my_datastream__created => {:values => "fake-date", :type => :date, :behaviors => [:sortable, :displayable]},
+        :my_datastream__created => {:values => "2012-12-17", :type => :date, :behaviors => [:sortable, :displayable, :not_searchable]},
         :my_datastream__title => {:values => "fake-title", :type => :text, :behaviors => [:searchable, :displayable, :sortable]},
         :my_datastream__related_url => {:values => "http://example.org/", :type =>:string, :behaviors => [:searchable]},
         :my_datastream__empty_field => {:values => [], :type => :string, :behaviors => [:searchable]}
@@ -204,8 +204,8 @@ describe ActiveFedora::NtriplesRDFDatastream do
       solr_doc["my_datastream__based_near_t"].sort.should == ["coverage1", "coverage2"]
       solr_doc["my_datastream__based_near_display"].sort.should == ["coverage1", "coverage2"]
       solr_doc["my_datastream__based_near_facet"].sort.should == ["coverage1", "coverage2"]
-      solr_doc["my_datastream__created_sort"].should == ["fake-date"]
-      solr_doc["my_datastream__created_display"].should == ["fake-date"]
+      solr_doc["my_datastream__created_sort"].should == ["2012-12-17"]
+      solr_doc["my_datastream__created_display"].should == ["2012-12-17"]
       solr_doc["my_datastream__title_t"].should == ["fake-title"]
       solr_doc["my_datastream__title_sort"].should == ["fake-title"]
       solr_doc["my_datastream__title_display"].should == ["fake-title"]
@@ -234,7 +234,7 @@ describe ActiveFedora::NtriplesRDFDatastream do
       #should have these            
       solr_doc["my_datastream__publisher_field"].should == ["publisher1"]
       solr_doc["my_datastream__based_near_field"].sort.should == ["coverage1", "coverage2"]
-      solr_doc["my_datastream__created_display"].should == ["fake-date"]
+      solr_doc["my_datastream__created_display"].should == ["2012-12-17"]
       solr_doc["my_datastream__title_field"].should == ["fake-title"]
         
       solr_doc["my_datastream__title_t"].should be_nil

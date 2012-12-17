@@ -451,17 +451,13 @@ module ActiveFedora
       generic_field_name_base = OM::XML::Terminology.term_generic_name(*term_pointer)
 
       SolrService.solr_names_and_values(generic_field_name_base, node_value, term.type, term.index_as).each do |field_name, field_value|
-        unless field_value.join("").strip.empty?
-          (solr_doc[field_name] ||= []) << (field_value.nil? ? "" : field_value.first)
-        end
+        (solr_doc[field_name] ||= []) << field_value.join(" ")
       end
 
       if term_pointer.length > 1
         hierarchical_field_name_base = OM::XML::Terminology.term_hierarchical_name(*term_pointer)
         SolrService.solr_names_and_values(hierarchical_field_name_base, node_value, term.type, term.index_as).each do |field_name, field_value|
-          unless field_value.join("").strip.empty?
-          (solr_doc[field_name] ||= []) << (field_value.nil? ? "" : field_value.first)
-          end
+          (solr_doc[field_name] ||= []) << field_value.join(" ")
         end
       end
       solr_doc

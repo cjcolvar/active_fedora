@@ -206,13 +206,12 @@ module ActiveFedora
       ensure_loaded
       fields.each do |field_key, field_info|
         values = field_info.fetch(:values, false)
-        if values
-          field_info[:behaviors].each do |index_type|
-            field_symbol = ActiveFedora::SolrService.solr_name(field_key, field_info[:type], index_type)
-            values = [values] unless values.respond_to? :each
-            values.each do |val|
-              (solr_doc[field_symbol] ||= []) << (val.nil? ? "" : val)
-            end
+        next if values.nil?
+        values = [values] unless values.respond_to? :each
+        values.each do |val|
+          next if val.nil?
+          SolrService.solr_names_and_values(field_key, val, field_info[:type], field_info[:behaviors]).each do |field_name, field_value|
+            (solr_doc[field_name] ||= []) << field_value.join(" ")
           end
         end
       end

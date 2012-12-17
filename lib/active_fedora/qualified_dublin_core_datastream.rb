@@ -96,10 +96,11 @@ module ActiveFedora
     def to_solr(solr_doc = Hash.new) # :nodoc:
       @fields.each do |field_key, field_info|
         things = send(field_key)
-        if things 
-          field_symbol = ActiveFedora::SolrService.solr_name(field_key, field_info[:type])
-          things.val.each do |val|
-	    (solr_doc[field_symbol] ||= []) << (val.nil? ? "" : val)
+        next if things.nil?
+        things.val.each do |val|
+          next if val.nil?
+          SolrService.solr_names_and_values(field_key, val, field_info[:type]).each do |field_name, field_value|
+            (solr_doc[field_name] ||= []) << field_value.join(" ")
           end
         end
       end
