@@ -135,15 +135,18 @@ module ActiveFedora
     end
 
     def self.id_field_name
-      @id_field_name ||= (self.superclass.ancestors.include?(ActiveFedora::FieldMapper) ? self.superclass.id_field_name : nil)
+      @id_field_name ||= superclass.id_field_name if superclass.respond_to? :id_field_name
+      @id_field_name ||= nil
     end
 
     def self.mappings
-	@mappings ||= (self.superclass.ancestors.include?(ActiveFedora::FieldMapper) ? self.superclass.mappings.clone : {})
+      @mappings ||= superclass.mappings.clone if superclass.respond_to? :mappings
+      @mappings ||= {}
     end
 
     def self.default_index_types
-	@default_index_types ||= (self.superclass.ancestors.include?(ActiveFedora::FieldMapper) ? self.superclass.default_index_types.clone : [])
+      @default_index_types ||= superclass.default_index_types.clone if superclass.respond_to? :default_index_types
+      @default_index_types ||= []
     end
 
     def self.index_as(index_type, opts = {}, &block)
