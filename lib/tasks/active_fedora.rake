@@ -85,7 +85,15 @@ namespace :repo do
   desc "Reindex all of the objects in the repository"
   task :reindex => :environment do
     puts "Re-indexing all objects"
-    ActiveFedora::Base.all(:cast=>true) {|obj| obj.update_index }
+    ActiveFedora::Base.all(:cast=>true) do |obj| 
+      begin
+        obj.update_index
+      rescue Exception => e
+        #Log any error hit and continue re-indexing
+        puts e.inspect
+	e.backtrace.each {|line| p line}
+      end
+    end
     puts "Re-indexed all objects"
   end
 
