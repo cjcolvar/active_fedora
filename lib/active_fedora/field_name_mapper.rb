@@ -20,8 +20,8 @@ module ActiveFedora::FieldNameMapper
       self.field_mapper.solr_name(field_name, field_type, index_type)
     end
 
-    def solr_names_and_values(field_name, field_value, field_type, index_type = :searchable)
-      self.field_mapper.solr_names_and_values(field_name, field_value, field_type, index_type)
+    def solr_names_and_values(field_name, field_value, field_type, index_types = [:searchable])
+      self.field_mapper.solr_names_and_values(field_name, field_value, field_type, index_types)
     end
     
     def field_mapper

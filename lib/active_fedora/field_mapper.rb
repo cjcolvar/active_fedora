@@ -162,7 +162,7 @@ module ActiveFedora
     
     # Given a specific field name, data type, and index type, returns the corresponding solr name.
     
-    def self.solr_name(field_name, field_type, index_type = :searchable)
+    def self.solr_name(field_name, field_type, index_type)
       name, mapping, data_type_mapping = solr_name_and_mappings(field_name, field_type, index_type)
       name
     end
