@@ -195,6 +195,7 @@ module ActiveFedora
         # Is there a custom converter?
         value = if data_type_mapping && data_type_mapping[:converter]
           converter = data_type_mapping[:converter]
+          converter = method converter if not converter.is_a? Method and not converter.is_a? Proc
           if converter.arity == 1
             converter.call(field_value)
           else
@@ -241,10 +242,11 @@ module ActiveFedora
       
       def method_missing(method, *args, &block)
 	@mappings ||= {}
-	suffix = (args.first and args.first.is_a? Hash) ? args.first[:suffix] : nil
-	converter = block_given? ? block : nil
+	opts = args.first || {}
+	converter = opts[:converter] if opts[:converter]
+	converter ||= block if block_given?
 	@mappings[[@index_type, method]] ||= {}
-	@mappings[[@index_type, method]][:suffix] = suffix 
+	@mappings[[@index_type, method]][:suffix] = opts[:suffix]
 	@mappings[[@index_type, method]][:converter] = converter if converter
       end
     end
@@ -254,19 +256,20 @@ module ActiveFedora
   public
 
     class Default < ActiveFedora::FieldMapper
+      def self.convertDate(value)
+	if value.nil?
+	  nil
+	elsif value.is_a?(Date) 
+          DateTime.parse(value.to_s).to_time.utc.iso8601 
+        elsif !value.empty?
+          DateTime.parse(value).to_time.utc.iso8601
+        end
+      end
 
       id_field 'id'
       index_as :searchable, :default => true do |t|
         t.default :suffix => '_t'
-        t.date :suffix => '_dt' do |value|
-          if value.nil?
-	    nil
-	  elsif value.is_a?(Date) 
-            DateTime.parse(value.to_s).to_time.utc.iso8601 
-          elsif !value.empty?
-            DateTime.parse(value).to_time.utc.iso8601
-          end
-        end
+        t.date :suffix => '_dt', :converter => :convertDate
         t.string  :suffix => '_t'
         t.text    :suffix => '_t'
         t.symbol  :suffix => '_s'

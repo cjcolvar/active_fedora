@@ -4,7 +4,7 @@ describe ActiveFedora::FieldMapper do
   
   # --- Test Mappings ----
   
-  class TestMapper0 < ActiveFedora::FieldMapper 
+  class TestMapper0 < ActiveFedora::FieldMapper
     id_field 'ident'
     index_as :searchable, :suffix => '_s',    :default => true
     index_as :edible,     :suffix => '_food'
@@ -35,6 +35,12 @@ describe ActiveFedora::FieldMapper do
     index_as :fungible, :suffix => '_f3' do |type|
       type.garble  :suffix => '_f4'
       type.integer :suffix => '_f5'
+    end
+  end
+
+  class TestMapper2 < ActiveFedora::FieldMapper::Default
+    def self.convertDate(value)
+      "date"
     end
   end
   
@@ -117,7 +123,12 @@ describe ActiveFedora::FieldMapper do
           'foo_haha' => ["Knock knock. Who's there? Bar. Bar who?"]
         }
     end
-    
+
+    it "should use overridden converter method" do
+      ActiveFedora::FieldMapper::Default.solr_names_and_values('roll', '2012-12-19', :date, [:searchable]).should == {'roll_dt' => ["2012-12-19T00:00:00Z"]}
+      TestMapper2.solr_names_and_values('roll', '2012-12-19', :date, [:searchable]).should == {'roll_dt' => ["date"]}
+    end   
+ 
     it "should generate multiple mappings when two return the _same_ solr name but _different_ values" do
       TestMapper0.solr_names_and_values('roll', 'rock', :date, [:unstemmed_searchable, :not_laughable]).should == {
         'roll_s' => ["rock o'clock", 'rock']
