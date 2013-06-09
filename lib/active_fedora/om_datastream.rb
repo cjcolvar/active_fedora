@@ -111,7 +111,7 @@ module ActiveFedora
     def content=(new_content)
       ng_xml_will_change! unless EquivalentXml.equivalent?(datastream_content, new_content)
       @ng_xml = Nokogiri::XML::Document.parse(new_content)
-      super(@ng_xml.to_s)
+      super(@ng_xml.to_xml {|config| config.no_declaration}.strip)
     end
 
     def content_changed?
